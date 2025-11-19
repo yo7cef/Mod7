@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOD7 - AI Destekli Araç Modifikasyon Platformu</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    />
+
+    <style>
+        :root {
+            --bg-gradient-start: #050509;
+            --bg-gradient-end: #050816;
+            --primary: #ef4444;           /* kırmızı */
+            --primary-soft: rgba(239, 68, 68, 0.16);
+            --accent: #f97316;            /* turuncu dokunuş */
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --card-bg: rgba(15, 16, 24, 0.98);
+            --card-border: rgba(148, 163, 184, 0.25);
+            --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.85);
+            --danger: #f97373;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: radial-gradient(circle at top, var(--bg-gradient-start) 0, var(--bg-gradient-end) 55%);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(5, 6, 15, 0.98);
+            backdrop-filter: blur(18px);
+            padding: 12px 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 500;
+            border: 1px solid rgba(75, 85, 99, 0.7);
+            color: var(--text-muted);
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-main);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(to right, #b91c1c, var(--primary));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.45);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 26px 24px 40px;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Home Page */
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+            gap: 32px;
+            align-items: stretch;
+        }
+
+        .hero-left {
+            padding: 20px 0;
+        }
+
+        .hero h1 {
+            font-size: 40px;
+            line-height: 1.08;
+            margin-bottom: 16px;
+        }
+
+        .hero .highlight {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 15px;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+        }
+
+        .hero-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(75, 85, 99, 0.9);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .hero-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 11px 20px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #b91c1c, #ef4444);
+            color: white;
+            box-shadow: 0 13px 30px rgba(239, 68, 68, 0.6);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 44px rgba(239, 68, 68, 0.8);
+        }
+
+        .btn-secondary {
+            background: rgba(15, 23, 42, 0.96);
+            color: var(--text-main);
+            border: 1px solid rgba(75, 85, 99, 0.8);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .hero-right {
+            border-radius: 18px;
+            padding: 12px;
+            background: radial-gradient(circle at top, rgba(239, 68, 68, 0.38), transparent 60%);
+        }
+
+        .hero-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .hero-car-preview {
+            aspect-ratio: 16/9;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            background: radial-gradient(circle at top, #111827, #020617);
+            margin-bottom: 12px;
+        }
+
+        .hero-car-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.97;
+        }
+
+        .hero-car-label {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.93);
+            font-size: 11px;
+            color: var(--text-main);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+        }
+
+        .hero-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .hero-metric {
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(12, 12, 17, 0.98);
+            border: 1px dashed rgba(75, 85, 99, 0.7);
+        }
+
+        .hero-metric span {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .hero-metric strong {
+            display: block;
+            margin-top: 3px;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            padding: 30px 0 6px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 14px;
+            border-radius: 14px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--card-border);
+        }
+
+        .feature-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .feature-card h3 {
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Section titles */
+        .page-title {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+            align-items: center;
+        }
+
+        .filter-input, .filter-select {
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(75, 85, 99, 0.9);
+            background: rgba(15, 23, 42, 0.98);
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .filter-input::placeholder {
+            color: #6b7280;
+        }
+
+        .filter-select {
+            padding-right: 26px;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+            margin-top: 8px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            cursor: pointer;
+            transition: all 0.22s;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 38px rgba(0,0,0,0.9);
+            border-color: var(--primary-soft);
+        }
+
+        .card.selected {
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.8), 0 18px 45px rgba(0,0,0,1);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 11px 13px 13px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .card-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .card-meta {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .card-price {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 4px 0 8px;
+        }
+
+        .card-btn {
+            width: 100%;
+            padding: 7px;
+            background: #111827;
+            color: var(--text-main);
+            border: 1px solid rgba(75, 85, 99, 0.9);
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.18s ease;
+        }
+
+        .card.selected .card-btn {
+            background: linear-gradient(to right, #b91c1c, #ef4444);
+            border-color: transparent;
+            color: white;
+        }
+
+        .card-btn:hover {
+            border-color: var(--primary);
+        }
+
+        /* Chatbot */
+        .chat-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 18px;
+            height: 540px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--card-border);
+        }
+
+        .chat-header {
+            padding: 14px 18px;
+            background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.25), #020617);
+            border-radius: 18px 18px 0 0;
+            border-bottom: 1px solid rgba(75, 85, 99, 0.7);
+        }
+
+        .chat-header h2 {
+            font-size: 16px;
+        }
+
+        .chat-header p {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 12px 14px;
+            overflow-y: auto;
+            background: radial-gradient(circle at top, #020617, #020617);
+        }
+
+        .message {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            animation: slideIn 0.22s;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+            background: linear-gradient(to right, #b91c1c, #ef4444);
+        }
+
+        .message.user .message-avatar {
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(75, 85, 99, 0.9);
+        }
+
+        .message-content {
+            max-width: 72%;
+            padding: 8px 10px;
+            border-radius: 11px;
+            line-height: 1.4;
+            font-size: 13px;
+        }
+
+        .message.bot .message-content {
+            background: #020617;
+            color: var(--text-main);
+            border: 1px solid rgba(55, 65, 81, 0.98);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(to right, #b91c1c, #ef4444);
+            color: white;
+        }
+
+        .suggested-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 6px 0 4px;
+        }
+
+        .suggested-btn {
+            padding: 5px 8px;
+            background: rgba(15,23,42,0.96);
+            border-radius: 999px;
+            font-size: 11px;
+            cursor: pointer;
+            border: 1px solid rgba(75, 85, 99, 0.9);
+            color: var(--text-muted);
+            transition: all 0.16s ease;
+        }
+
+        .suggested-btn:hover {
+            background: var(--primary-soft);
+            color: var(--text-main);
+            border-color: var(--primary);
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #020617;
+            border-radius: 0 0 18px 18px;
+            border-top: 1px solid rgba(55, 65, 81, 0.9);
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 9px 11px;
+            border: 1px solid rgba(75, 85, 99, 0.95);
+            border-radius: 999px;
+            font-size: 13px;
+            background: #020617;
+            color: var(--text-main);
+        }
+
+        .chat-input input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            padding: 9px 14px;
+            background: linear-gradient(to right, #b91c1c, #ef4444);
+            color: white;
+            border: none;
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* Map */
+        .map-container {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 14px 14px 16px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--card-border);
+        }
+
+        #map {
+            height: 380px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+        }
+
+        .services-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .service-card {
+            background: #020617;
+            padding: 10px;
+            border-radius: 12px;
+            display: flex;
+            gap: 10px;
+            border: 1px solid rgba(55, 65, 81, 0.95);
+        }
+
+        .service-image {
+            width: 100px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .service-info {
+            flex: 1;
+        }
+
+        .service-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .service-rating {
+            color: #facc15;
+            margin-bottom: 2px;
+            font-size: 12px;
+        }
+
+        .service-address {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .service-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .service-btn {
+            padding: 6px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-call {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-directions {
+            background: rgba(15,23,42,0.98);
+            color: var(--text-main);
+            border: 1px solid rgba(75, 85, 99, 0.95);
+        }
+
+        /* Visualizer */
+        .visualizer {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr);
+            gap: 18px;
+        }
+
+        .preview-area {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--card-border);
+        }
+
+        .preview-box {
+            aspect-ratio: 16/9;
+            background: radial-gradient(circle at top, #0b0f19, #020617);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+        }
+
+        .preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .visualize-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(to right, #b91c1c, #ef4444);
+            color: white;
+            border: none;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+
+        .visualize-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .selected-items {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--card-border);
+        }
+
+        .selected-items h3 {
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .selected-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .selected-item {
+            display: flex;
+            gap: 8px;
+            padding: 7px;
+            background: #020617;
+            border-radius: 10px;
+            border: 1px solid rgba(55, 65, 81, 0.95);
+        }
+
+        .selected-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .selected-item-info {
+            flex: 1;
+        }
+
+        .selected-item-name {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .selected-item-price {
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 3px;
+            font-size: 12px;
+        }
+
+        .total-price {
+            margin-top: 10px;
+            padding: 10px 11px;
+            background: radial-gradient(circle at top left, rgba(239,68,68,0.12), #020617);
+            color: var(--text-main);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 13px;
+            border: 1px solid rgba(75, 85, 99, 0.95);
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            .hero {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .hero-right {
+                order: -1;
+            }
+            .visualizer {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 14px 28px;
+            }
+            .hero h1 {
+                font-size: 30px;
+            }
+            .chat-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo" onclick="showPage('home', null)">
+                🚗 <span>MOD7</span>
+            </div>
+            <div class="nav">
+                <button class="nav-btn active" onclick="showPage('home', this)">Ana Sayfa</button>
+                <button class="nav-btn" onclick="showPage('vehicles', this)">Araçlar</button>
+                <button class="nav-btn" onclick="showPage('parts', this)">Parçalar</button>
+                <button class="nav-btn" onclick="showPage('chat', this)">AI Asistan</button>
+                <button class="nav-btn" onclick="showPage('visualize', this)">Görselleştir</button>
+                <button class="nav-btn" onclick="showPage('services', this)">Servisler</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Home Page -->
+        <div id="home" class="page active">
+            <div class="hero">
+                <div class="hero-left">
+                    <div class="hero-badges">
+                        <span class="badge">AI Görselleştirme</span>
+                        <span class="badge">Canlı Modifiye Teklifi</span>
+                        <span class="badge">Servis Haritası</span>
+                    </div>
+                    <h1>Hayalindeki Modifiyeyi<br><span class="highlight">Gerçeğe Dönüştür</span></h1>
+                    <p>
+                        MOD7 ile aracına yapacağın modifikasyonları önce ekranda gör,
+                        AI asistan’dan tavsiye al ve sana en yakın, güvenilir servisleri keşfet.
+                    </p>
+                    <div class="hero-btns">
+                        <button class="btn btn-primary" onclick="showPage('vehicles', document.querySelector('.nav-btn:nth-child(2)'))">Hemen Başla</button>
+                        <button class="btn btn-secondary" onclick="showPage('chat', document.querySelector('.nav-btn:nth-child(4)'))">AI Asistan ile Konuş</button>
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <div class="hero-card">
+                        <div class="hero-car-preview">
+                            <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=450&fit=crop&auto=format" alt="MOD7 Preview">
+                            <div class="hero-car-label">🔥 BMW M3 + Jant + Body Kit Örneği</div>
+                        </div>
+                        <div class="hero-metrics">
+                            <div class="hero-metric">
+                                <span>AI Önizleme</span>
+                                <strong>10 sn içinde</strong>
+                            </div>
+                            <div class="hero-metric">
+                                <span>Toplam Modifiye</span>
+                                <strong>Canlı bütçe hesabı</strong>
+                            </div>
+                            <div class="hero-metric">
+                                <span>Servis Bul</span>
+                                <strong>İstanbul odaklı liste</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">✨</div>
+                    <h3>AI Görselleştirme</h3>
+                    <p>Aracını ve parçalarını seç, yapay zeka ile modifiyeni ekranda gerçekçi şekilde gör.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>Akıllı Asistan</h3>
+                    <p>“Bu jant bu araca uyar mı?”, “Yasal mı?” gibi sorularını anında AI asistana sor.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🗺️</div>
+                    <h3>Servis Haritası</h3>
+                    <p>İstanbul çevresindeki performans ve modifiye servislerini harita üzerinden incele.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Geniş Katalog</h3>
+                    <p>Jant, body kit, egzoz, süspansiyon ve daha fazlasını tek ekranda karşılaştır.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicles Page -->
+        <div id="vehicles" class="page">
+            <h1 class="page-title">Aracını Seç</h1>
+            <p class="page-subtitle">Önce aracını seç, sonra modifiye parçalarını birlikte toplayalım.</p>
+
+            <div class="filter-bar">
+                <input id="vehicleSearch" class="filter-input" type="text" placeholder="Araç ara (örn. Golf, M3, Supra)" oninput="renderVehicles()">
+                <select id="vehicleTypeFilter" class="filter-select" onchange="renderVehicles()">
+                    <option value="all">Kasa tipi (Hepsi)</option>
+                    <option value="Sedan">Sedan</option>
+                    <option value="Coupe">Coupe</option>
+                    <option value="Hatchback">Hatchback</option>
+                    <option value="Supercar">Supercar</option>
+                </select>
+            </div>
+
+            <div class="cards-grid" id="vehiclesGrid"></div>
+        </div>
+
+        <!-- Parts Page -->
+        <div id="parts" class="page">
+            <h1 class="page-title">Parça Kataloğu</h1>
+            <p class="page-subtitle" id="selectedVehicleText">Önce bir araç seçin.</p>
+
+            <div class="filter-bar">
+                <select id="partCategoryFilter" class="filter-select" onchange="renderParts()">
+                    <option value="all">Kategori (Hepsi)</option>
+                    <option value="Jant">Jant</option>
+                    <option value="Body Kit">Body Kit</option>
+                    <option value="Egzoz">Egzoz</option>
+                    <option value="Spoiler">Spoiler</option>
+                    <option value="Fren">Fren</option>
+                    <option value="Süspansiyon">Süspansiyon</option>
+                    <option value="İç Aksesuar">İç Aksesuar</option>
+                </select>
+            </div>
+
+            <div class="cards-grid" id="partsGrid"></div>
+            <div style="margin-top: 14px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="goToVisualize()">
+                    🔮 Seçtiklerimi Görselleştir
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Page -->
+        <div id="chat" class="page">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2>🤖 AI Modifiye Asistanı</h2>
+                    <p>Modifiye, yasal durum veya bütçe hakkında ne istersen sorabilirsin.</p>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            Merhaba! Araç modifikasyonu hakkında sana nasıl yardımcı olabilirim?
+                        </div>
+                    </div>
+                    <div class="suggested-questions">
+                        <button class="suggested-btn" onclick="askQuestion('Bu modifikasyon yasal mı?')">Bu modifikasyon yasal mı?</button>
+                        <button class="suggested-btn" onclick="askQuestion('Hangi body kit önerirsin?')">Hangi body kit önerirsin?</button>
+                        <button class="suggested-btn" onclick="askQuestion('Performans artırıcı parçalar neler?')">Performans artırıcı parçalar?</button>
+                        <button class="suggested-btn" onclick="askQuestion('Bütçem 50.000 TL, ne önerirsin?')">50K TL bütçe önerisi</button>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Mesajını yaz..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button class="send-btn" onclick="sendMessage()">Gönder</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualize Page -->
+        <div id="visualize" class="page">
+            <h1 class="page-title">AI Görselleştirme</h1>
+            <p class="page-subtitle">Aracını ve seçtiğin parçaları birlikte görüntüle, modifiyeni ekranda gör.</p>
+            <div class="visualizer">
+                <div class="preview-area">
+                    <div class="preview-box" id="previewBox">
+                        <div class="preview-placeholder">
+                            <div style="text-align: center;">
+                                <div style="font-size: 30px; margin-bottom: 8px;">✨</div>
+                                <p>Aracını ve parçalarını seçtikten sonra<br>AI görselleştirmeyi başlat.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="visualize-btn" onclick="generateVisualization(this)">
+                        ✨ AI ile Görselleştir
+                    </button>
+                </div>
+                <div class="selected-items">
+                    <h3>Seçili Öğeler</h3>
+                    <div class="selected-list" id="selectedList"></div>
+                    <div class="total-price">
+                        <span>Toplam Parça Fiyatı</span>
+                        <span id="totalPrice">₺0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services / Map Page -->
+        <div id="services" class="page">
+            <div class="map-container">
+                <h1 class="page-title" style="margin-bottom: 6px;">Yakındaki Modifikasyon Servisleri</h1>
+                <p class="page-subtitle" style="margin-bottom: 10px;">İstanbul ve çevresindeki performans & modifiye servislerini keşfet.</p>
+                <div id="map"></div>
+                <div class="services-list" id="servicesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="">
+    </script>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:3001/api';
+
+        // Data - Vehicles (kasa tipi ekledim)
+        const vehicles = [
+            {
+                id: 1,
+                name: 'BMW M3 Competition',
+                year: 2023,
+                type: 'Sedan',
+                image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=450&fit=crop&auto=format'
+            },
+            {
+                id: 2,
+                name: 'Mercedes-AMG C63',
+                year: 2022,
+                type: 'Sedan',
+                image: 'https://www.donanimhaber.com/images/images/haber/153945/src/yeni-mercedes-amg-c63-s-tanitildi-iste-tasarimi-ve-ozellikleri153945_0.jpg'
+            },
+            {
+                id: 3,
+                name: 'Audi RS5',
+                year: 2023,
+                type: 'Coupe',
+                image: 'https://cdn.motor1.com/images/mgl/2kxLg/s1/audi-rs5-sportback-by-abt.jpg'
+            },
+            {
+                id: 4,
+                name: 'Porsche 911 Turbo S',
+                year: 2023,
+                type: 'Supercar',
+                image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=450&fit=crop&auto=format'
+            },
+            {
+                id: 5,
+                name: 'VW Golf 8 GTI',
+                year: 2022,
+                type: 'Hatchback',
+                image: 'https://cdn.otopark.com/wp-content/uploads/2020/10/volkswagen-golf-8-gti-clubsport-2021.jpg'
+            },
+            {
+                id: 6,
+                name: 'Honda Civic Type R',
+                year: 2023,
+                type: 'Hatchback',
+                image: 'https://otoyazar.com/wp-content/uploads/2017/03/Honda-Civic-Type-R.jpg'
+            },
+            {
+                id: 7,
+                name: 'Toyota GR Supra',
+                year: 2023,
+                type: 'Coupe',
+                image: 'https://cdn.motor1.com/images/mgl/7ZoGzp/s3/toyota-gr-supra-a90-final-edition-2025.jpg'
+            },
+            {
+                id: 8,
+                name: 'Ford Mustang GT',
+                year: 2022,
+                type: 'Coupe',
+                image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGmnqsSAIqCaMqr35UllAoOpnwGONIkezpPA&s'
+            },
+            {
+                id: 9,
+                name: 'Nissan GT-R R35',
+                year: 2023,
+                type: 'Supercar',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Nissan_GT-R_01.JPG'
+            },
+            {
+                id: 10,
+                name: 'Subaru WRX STI',
+                year: 2022,
+                type: 'Sedan',
+                image: 'https://www.topgear.com/sites/default/files/cars-car/image/2015/02/buyers_guide_-_subaru_wrx_sti_2014_-_front_quarter_0.jpg?w=1280&h=720'
+            },
+            {
+                id: 11,
+                name: 'Renault Megane RS',
+                year: 2022,
+                type: 'Hatchback',
+                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/2019_Renault_Megane_R.S._300_Trophy_1.8_Front.jpg/1200px-2019_Renault_Megane_R.S._300_Trophy_1.8_Front.jpg'
+            },
+            {
+                id: 12,
+                name: 'Hyundai i30 N',
+                year: 2023,
+                type: 'Hatchback',
+                image: 'https://www.thecarexpert.co.uk/wp-content/uploads/2021/08/hyundai-i30-n-0721-exterior-03-1600x1200-cropped.jpeg'
+            }
+        ];
+
+        // Data - Parts
+        const parts = [
+            // Jantlar
+            {
+                id: 1,
+                name: 'BBS CH-R 18" Jant Seti',
+                price: 25000,
+                category: 'Jant',
+                image: 'https://www.maperformance.com/cdn/shop/products/bbs-wheels-bbs-chr132spo-18x8-0-size-40mm-offset-3892619313222_grande.png?v=1757472476'
+            },
+            {
+                id: 2,
+                name: 'OZ Racing Ultraleggera 19"',
+                price: 32000,
+                category: 'Jant',
+                image: 'https://x-tremetuning.com/images/detailed/27/oz_superturismo_evo_gloss_black_doi4-uf.jpg'
+            },
+            {
+                id: 3,
+                name: 'Rotiform BLQ 20" Forged',
+                price: 45000,
+                category: 'Jant',
+                image: 'https://www.rotiform.com/media/catalog/product/b/l/blq-r110-19x10-silver-a1-png.png'
+            },
+            {
+                id: 4,
+                name: 'HRE P104SC Carbon Fiber',
+                price: 85000,
+                category: 'Jant',
+                image: 'https://image.made-in-china.com/318f0j00eECUiVnohPuk/Forged-Aluminum-Car-Rims-HRE-P104SC-Bright-Black-mp4.webp'
+            },
+
+            // Body Kitler
+            {
+                id: 5,
+                name: 'M Performance Body Kit',
+                price: 65000,
+                category: 'Body Kit',
+                image: 'https://www.eurolineas-personales.com/25663-home_default/body-kit-bmw-f30-look-m-performance.jpg'
+            },
+            {
+                id: 6,
+                name: 'Liberty Walk Wide Body',
+                price: 120000,
+                category: 'Body Kit',
+                image: 'https://sc04.alicdn.com/kf/H075f7036050c478fb85b2a485531b42dU.jpg'
+            },
+            {
+                id: 7,
+                name: 'Aero Package Carbon Fiber',
+                price: 95000,
+                category: 'Body Kit',
+                image: 'https://ind-distribution.com/cdn/shop/products/51297301730_996ec151e9_b.jpg?v=1735919901'
+            },
+            {
+                id: 8,
+                name: 'Rocket Bunny V3',
+                price: 110000,
+                category: 'Body Kit',
+                image: 'https://cdn03.ciceksepeti.com/cicek/kcm41248011-1/L/subaru-brz-toyota-gt86-2012-2020-model-arasi-rocket-bunny-pandem-v3-body-kit-spoiler-dahil-kcm41248011-8efd1730-a64c-4447-867a-a2b3ef7913d3.jpeg'
+            },
+
+            // Egzozlar
+            {
+                id: 9,
+                name: 'Akrapovic Titanium Egzoz',
+                price: 42000,
+                category: 'Egzoz',
+                image: 'https://i0.shbdn.com/photos/07/52/24/x5_1236075224wed.jpg'
+            },
+            {
+                id: 10,
+                name: 'Milltek Sport Cat-Back',
+                price: 28000,
+                category: 'Egzoz',
+                image: 'https://www.powershoponline.com/idea/bi/20/myassets/products/828/ssxvw401-1.jpg?revision=1735815697'
+            },
+            {
+                id: 11,
+                name: 'iPE Valvetronic Exhaust',
+                price: 55000,
+                category: 'Egzoz',
+                image: 'https://flat6motorsports.com/cdn/shop/products/01-Porsche-997-GT3-Full-System.jpg?v=1525406088'
+            },
+            {
+                id: 12,
+                name: 'Armytrix Full System',
+                price: 75000,
+                category: 'Egzoz',
+                image: 'https://ciciosoft.s3.amazonaws.com/2024/12/NI35S-AF-NI35S-QS12G.jpg'
+            },
+
+            // Spoilerlar
+            {
+                id: 13,
+                name: 'APR GT-250 Carbon Spoiler',
+                price: 35000,
+                category: 'Spoiler',
+                image: 'https://i.ebayimg.com/images/g/w78AAOSwF1hcomfl/s-l1200.jpg'
+            },
+            {
+                id: 14,
+                name: 'Vorsteiner VRT Aero Wing',
+                price: 48000,
+                category: 'Spoiler',
+                image: 'https://vorsteiner.com/cdn/shop/products/BMW_G8X_M3-M4_Aero_Web_Carbon-Fiber-Rear-Wing-Blade-Aluminum-Uprights_3.png?v=1756507547&width=1080'
+            },
+            {
+                id: 15,
+                name: 'Seibon Carbon Ducktail',
+                price: 28000,
+                category: 'Spoiler',
+                image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA3-C7v-xOezDwS-8DEy0FpOQfOQ_zH7H3pg&s'
+            },
+
+            // Fren Sistemleri
+            {
+                id: 16,
+                name: 'Brembo GT-R 6 Piston Kit',
+                price: 65000,
+                category: 'Fren',
+                image: 'https://www.dream-automotive.com/cdn/shop/products/FK2_BREMBO_GT6_BIG_BRAKE_KIT.png?v=1589752860'
+            },
+            {
+                id: 17,
+                name: 'AP Racing Radi-CAL',
+                price: 85000,
+                category: 'Fren',
+                image: 'https://apracing.com/cdn/pages/1553/1553/CP8530.jpg'
+            },
+            {
+                id: 18,
+                name: 'Endless Big 6 Caliper',
+                price: 72000,
+                category: 'Fren',
+                image: 'https://rzcrewgarage.com/cdn/shop/products/endless-6-pots-inch-up-big-brake-kit-e-slit-options-toyota-alphard-ggh3035w-rzcrew-1.jpg?v=1710322182'
+            },
+
+            // Süspansiyon
+            {
+                id: 19,
+                name: 'KW V3 Coilover Kit',
+                price: 38000,
+                category: 'Süspansiyon',
+                image: 'https://unity-performance.com/cdn/shop/files/kw-v3-clubsport-coilover-kit-2023-civic-type-r-fl5-320933.png?v=1734572942&width=1445'
+            },
+            {
+                id: 20,
+                name: 'Öhlins Road & Track',
+                price: 52000,
+                category: 'Süspansiyon',
+                image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr15-yM-epRi9YdxeV5_tVw9FEWplqsZxbZg&s'
+            },
+            {
+                id: 21,
+                name: 'Bilstein PSS10',
+                price: 32000,
+                category: 'Süspansiyon',
+                image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEz-MyxWwULbpGM0D9xX9XWW31iKFejXmQ2g&s'
+            },
+
+            // İç Aksesuar
+            {
+                id: 22,
+                name: 'Recaro Sportster CS',
+                price: 18000,
+                category: 'İç Aksesuar',
+                image: 'https://www.recaro-automotive.com/fileadmin/01-products/dynamic/sportster-cs/upholstery/recaro-sportster-cs-us-ambla-leather-black.png?v=1747315081'
+            },
+            {
+                id: 23,
+                name: 'Sparco Steering Wheel',
+                price: 12000,
+                category: 'İç Aksesuar',
+                image: 'https://www.sparco-official.com/media/catalog/product/0/1/015r345mln_01_hflaxekes8ampoaj.jpg'
+            },
+            {
+                id: 24,
+                name: 'Alcantara Interior Kit',
+                price: 35000,
+                category: 'İç Aksesuar',
+                image: 'https://ind-distribution.com/cdn/shop/products/51952411428_74aadf1b-b880-4d4e-9f82-70655ddfe7e9.jpg?v=1735923231'
+            }
+        ];
+
+        // Istanbul modification services
+        const services = [
+            {id: 1, name: 'AutoMod Performance', rating: 4.8, address: 'Levent, İstanbul', phone: '+90 212 345 67 89', lat: 41.0789, lng: 29.0117, image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&h=300&fit=crop&auto=format'},
+            {id: 2, name: 'Turbo Garage İstanbul', rating: 4.9, address: 'Maslak, İstanbul', phone: '+90 212 456 78 90', lat: 41.1096, lng: 29.0222, image: 'https://images.unsplash.com/photo-1632823469850-1b4942bb22c3?w=400&h=300&fit=crop&auto=format'},
+            {id: 3, name: 'Speed Factory Turkey', rating: 4.7, address: 'Şişli, İstanbul', phone: '+90 212 567 89 01', lat: 41.0608, lng: 28.9877, image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=300&fit=crop&auto=format'},
+            {id: 4, name: 'Modifiye Ustası', rating: 4.6, address: 'Beşiktaş, İstanbul', phone: '+90 212 678 90 12', lat: 41.0422, lng: 29.0097, image: 'https://images.unsplash.com/photo-1605570489990-02435f8748e8?w=400&h=300&fit=crop&auto=format'},
+            {id: 5, name: 'Elite Car Customs', rating: 4.8, address: 'Kadıköy, İstanbul', phone: '+90 216 789 01 23', lat: 40.9907, lng: 29.0257, image: 'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=400&h=300&fit=crop&auto=format'},
+            {id: 6, name: 'Performance Tuning TR', rating: 4.9, address: 'Kartal, İstanbul', phone: '+90 216 890 12 34', lat: 40.9067, lng: 29.1922, image: 'https://images.unsplash.com/photo-1621893407418-8a4de707f074?w=400&h=300&fit=crop&auto=format'}
+        ];
+
+        // State
+        let selectedVehicle = null;
+        let selectedParts = [];
+        let map = null;
+        let markers = [];
+        let mapInitialized = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderVehicles();
+            renderServices();
+        });
+
+        // Leaflet Map initialization
+        function initMap() {
+            const istanbul = [41.0082, 28.9784];
+
+            map = L.map('map').setView(istanbul, 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            services.forEach(service => {
+                const marker = L.marker([service.lat, service.lng]).addTo(map);
+                marker.bindPopup(`
+                    <b>${service.name}</b><br>
+                    ⭐ ${service.rating}<br>
+                    📍 ${service.address}<br>
+                    📞 ${service.phone}
+                `);
+                markers.push({serviceId: service.id, marker});
+            });
+
+            mapInitialized = true;
+        }
+
+        function showPage(pageId, el) {
+            // Sayfaları yönet
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const pageEl = document.getElementById(pageId);
+            if (pageEl) pageEl.classList.add('active');
+
+            // Navbar aktif buton
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if (el && el.classList && el.classList.contains('nav-btn')) {
+                el.classList.add('active');
+            }
+
+            if (pageId === 'parts') renderParts();
+            if (pageId === 'visualize') {
+                renderSelectedItems();
+                const previewBox = document.getElementById('previewBox');
+                if (selectedVehicle) {
+                    previewBox.innerHTML = `
+                        <img src="${selectedVehicle.image}" alt="${selectedVehicle.name}">
+                        <div style="position: absolute; bottom: 10px; left: 10px; padding: 6px 10px; border-radius:999px; background: rgba(15,23,42,0.9); color:#e5e7eb; font-size:11px; border:1px solid rgba(148,163,184,0.7);">
+                            🚗 ${selectedVehicle.name} için modifiye önizlemesi
+                        </div>
+                    `;
+                }
+            }
+
+            if (pageId === 'services') {
+                if (!mapInitialized) {
+                    setTimeout(() => {
+                        initMap();
+                    }, 50);
+                } else {
+                    setTimeout(() => {
+                        map.invalidateSize();
+                    }, 50);
+                }
+            }
+        }
+
+        function renderVehicles() {
+            const grid = document.getElementById('vehiclesGrid');
+            const searchEl = document.getElementById('vehicleSearch');
+            const typeFilterEl = document.getElementById('vehicleTypeFilter');
+
+            const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
+            const typeFilter = typeFilterEl ? typeFilterEl.value : 'all';
+
+            let list = vehicles.slice();
+
+            if (search) {
+                list = list.filter(v =>
+                    v.name.toLowerCase().includes(search) ||
+                    v.year.toString().includes(search)
+                );
+            }
+
+            if (typeFilter !== 'all') {
+                list = list.filter(v => v.type === typeFilter);
+            }
+
+            if (!list.length) {
+                grid.innerHTML = '<p style="color:#9ca3af; padding:10px 0;">Kriterlere uyan araç bulunamadı.</p>';
+                return;
+            }
+
+            grid.innerHTML = list.map(v => `
+                <div class="card ${selectedVehicle?.id === v.id ? 'selected' : ''}" onclick="selectVehicle(${v.id})">
+                    <img src="${v.image}" alt="${v.name}" class="card-image">
+                    <div class="card-content">
+                        <div class="card-subtitle">${v.year} Model · ${v.type}</div>
+                        <div class="card-title">${v.name}</div>
+                        <div class="card-meta">Modifiye için uygun örnek araç</div>
+                        <button class="card-btn">
+                            ${selectedVehicle?.id === v.id ? '✓ Araç Seçildi' : 'Aracı Seç'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectVehicle(id) {
+            selectedVehicle = vehicles.find(v => v.id === id);
+            renderVehicles();
+            // Araç seçildikten sonra otomatik Parçalar sayfasına yönlendir
+            const partsBtn = document.querySelector('.nav-btn:nth-child(3)');
+            showPage('parts', partsBtn);
+        }
+
+        function renderParts() {
+            const grid = document.getElementById('partsGrid');
+            const text = document.getElementById('selectedVehicleText');
+            const categoryFilterEl = document.getElementById('partCategoryFilter');
+            const categoryFilter = categoryFilterEl ? categoryFilterEl.value : 'all';
+
+            if (!selectedVehicle) {
+                text.textContent = 'Önce bir araç seçin.';
+                grid.innerHTML = '<p style="color: #9ca3af; text-align: center; grid-column: 1/-1; padding: 16px 0;">Lütfen önce Araçlar sekmesinden bir araç seçin.</p>';
+                return;
+            }
+
+            text.textContent = `${selectedVehicle.name} için uyumlu parçalar:`;
+
+            let list = parts.slice();
+
+            if (categoryFilter !== 'all') {
+                list = list.filter(p => p.category === categoryFilter);
+            }
+
+            grid.innerHTML = list.map(p => {
+                const isSelected = selectedParts.some(sp => sp.id === p.id);
+                return `
+                    <div class="card ${isSelected ? 'selected' : ''}" onclick="togglePart(${p.id})">
+                        <img src="${p.image}" alt="${p.name}" class="card-image">
+                        <div class="card-content">
+                            <div class="card-subtitle">${p.category}</div>
+                            <div class="card-title">${p.name}</div>
+                            <div class="card-price">₺${p.price.toLocaleString('tr-TR')}</div>
+                            <button class="card-btn">
+                                ${isSelected ? '✓ Sepetten Kaldır' : 'Parçayı Ekle'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function togglePart(id) {
+            const part = parts.find(p => p.id === id);
+            const index = selectedParts.findIndex(p => p.id === id);
+
+            if (index > -1) {
+                selectedParts.splice(index, 1);
+            } else {
+                selectedParts.push(part);
+            }
+
+            renderParts();
+        }
+
+        function renderServices() {
+            const list = document.getElementById('servicesList');
+            list.innerHTML = services.map(s => `
+                <div class="service-card">
+                    <img src="${s.image}" alt="${s.name}" class="service-image">
+                    <div class="service-info">
+                        <div class="service-name">${s.name}</div>
+                        <div class="service-rating">⭐ ${s.rating} · Harika</div>
+                        <div class="service-address">📍 ${s.address}</div>
+                        <div class="service-btns">
+                            <button class="service-btn btn-call" onclick="window.open('tel:${s.phone}')">📞 Ara</button>
+                            <button class="service-btn btn-directions" onclick="showOnMap(${s.id})">🧭 Haritada Göster</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showOnMap(serviceId) {
+            const service = services.find(s => s.id === serviceId);
+            if (!service) return;
+
+            const servicesBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => btn.textContent.includes('Servisler'));
+            showPage('services', servicesBtn || null);
+
+            setTimeout(() => {
+                if (map) {
+                    map.setView([service.lat, service.lng], 15);
+                    const m = markers.find(m => m.serviceId === serviceId);
+                    if (m && m.marker) {
+                        m.marker.openPopup();
+                    }
+                }
+            }, 150);
+        }
+
+        function renderSelectedItems() {
+            const list = document.getElementById('selectedList');
+            const totalEl = document.getElementById('totalPrice');
+
+            if (!selectedVehicle) {
+                list.innerHTML = '<p style="color: #9ca3af; text-align: center;">Önce bir araç ve en az bir parça seçmelisiniz.</p>';
+                totalEl.textContent = '₺0';
+                return;
+            }
+
+            const vehicleHTML = `
+                <div class="selected-item">
+                    <img src="${selectedVehicle.image}" alt="${selectedVehicle.name}">
+                    <div class="selected-item-info">
+                        <div class="selected-item-name">🚗 ${selectedVehicle.name}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${selectedVehicle.year} Model · ${selectedVehicle.type}</div>
+                    </div>
+                </div>
+            `;
+
+            const partsHTML = selectedParts.map(p => `
+                <div class="selected-item">
+                    <img src="${p.image}" alt="${p.name}">
+                    <div class="selected-item-info">
+                        <div class="selected-item-name">${p.name}</div>
+                        <div class="selected-item-price">₺${p.price.toLocaleString('tr-TR')}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            list.innerHTML = vehicleHTML + partsHTML;
+
+            const total = selectedParts.reduce((sum, p) => sum + p.price, 0);
+            totalEl.textContent = `₺${total.toLocaleString('tr-TR')}`;
+        }
+
+        function goToVisualize() {
+            const navBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => btn.textContent.includes('Görselleştir'));
+            showPage('visualize', navBtn || null);
+        }
+
+        async function generateVisualization(btn) {
+            if (!selectedVehicle || selectedParts.length === 0) {
+                alert('Lütfen önce bir araç ve en az bir parça seçin!');
+                return;
+            }
+
+            const previewBox = document.getElementById('previewBox');
+
+            btn.innerHTML = '<span class="loading"></span> AI Görsel Oluşturuluyor...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/visualize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vehicle: selectedVehicle,
+                        parts: selectedParts
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    previewBox.innerHTML = `
+                        <img src="${data.imageUrl}" alt="AI Generated Visualization">
+                        <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(15,23,42,0.9); color: white; padding: 6px 10px; border-radius: 999px; font-size: 11px; border:1px solid rgba(148,163,184,0.8);">
+                            ✨ AI Tarafından Oluşturuldu (DALL-E)
+                        </div>
+                    `;
+                    btn.innerHTML = '✓ Görselleştirme Tamamlandı';
+
+                    setTimeout(() => {
+                        btn.innerHTML = '✨ Yeniden Görselleştir';
+                        btn.disabled = false;
+                    }, 2000);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Visualization error:', error);
+                alert('Görselleştirme sırasında bir hata oluştu. Backend sunucusunun (localhost:3001) çalıştığından emin ol.');
+                btn.innerHTML = '✨ AI ile Görselleştir';
+                btn.disabled = false;
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addMessage(message, 'user');
+            input.value = '';
+
+            try {
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        vehicle: selectedVehicle,
+                        parts: selectedParts
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage('Üzgünüm, şu anda yanıt veremiyorum. Backend sunucusunun çalıştığından emin olun (localhost:3001).', 'bot');
+            }
+        }
+
+        function askQuestion(question) {
+            document.getElementById('chatInput').value = question;
+            sendMessage();
+        }
+
+        function addMessage(text, type) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageHTML = `
+                <div class="message ${type}">
+                    <div class="message-avatar">${type === 'bot' ? '🤖' : '👤'}</div>
+                    <div class="message-content">${text}</div>
+                </div>
+            `;
+            messagesDiv.insertAdjacentHTML('beforeend', messageHTML);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
